@@ -71,7 +71,8 @@ pipeline {
                     input message: "Are you sure you want to destroy the resources?",
                     parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
                 }
-                sh "pwd;cd terraform/ ; terraform destroy -input=false -auto-approve"
+                sh "pwd;cd terraform/ ; terraform destroy -input=false -auto-approve > destroy_output.txt 2>&1"
+                sh 'cat terraform/destroy_output.txt'
             }
         }
     }
