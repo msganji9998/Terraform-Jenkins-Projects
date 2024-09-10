@@ -20,6 +20,18 @@ pipeline {
                     }
                 }
             }
+        stage('Cleanup') {
+  steps {
+    script {
+      dir('terraform') {
+        sh 'rm -f terraform.tfstate terraform.tfstate.backup'
+        sh 'rm -f *.tfplan'
+        sh 'rm -rf .terraform'
+      }
+    }
+  }
+}
+
 
         stage('Plan') {
             steps {
