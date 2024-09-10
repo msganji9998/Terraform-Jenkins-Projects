@@ -8,18 +8,17 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
     }
 
-   agent  any
+ agent any
     stages {
-        stage('checkout') {
+        stage('Checkout') {
             steps {
-                 script{
-                        dir("terraform")
-                        {
-                            git "https://github.com/SUDHA1943/Terraform-Jenkins.git"
-                        }
+                script {
+                    dir('terraform') {
+                        git 'https://github.com/SUDHA1943/Terraform-Jenkins.git'
                     }
                 }
             }
+        }
 
         stage('Plan') {
             steps {
