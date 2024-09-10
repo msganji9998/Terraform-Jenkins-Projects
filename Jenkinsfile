@@ -35,7 +35,7 @@ pipeline {
         stage('Plan') {
             when {
                 not {
-                    equals expected: true, actual: params.destroy
+                    expression { return params.destroy }
                 }
             }
             steps {
@@ -52,7 +52,7 @@ pipeline {
         stage('Approval') {
             when {
                 not {
-                    equals expected: true, actual: params.destroy
+                    expression { return params.destroy }
                 }
             }
             steps {
@@ -67,7 +67,7 @@ pipeline {
         stage('Apply') {
             when {
                 not {
-                    equals expected: true, actual: params.destroy
+                    expression { return params.destroy }
                 }
             }
             steps {
@@ -81,12 +81,11 @@ pipeline {
         
         stage('Destroy') {
             when {
-                expression {
-                    return params.destroy
-                }
+                expression { return params.destroy }
             }
             steps {
                 script {
+                    echo "Destroying Terraform-managed infrastructure..."
                     dir('terraform') {
                         sh 'terraform init'
                         sh 'terraform destroy -auto-approve'
