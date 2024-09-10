@@ -13,22 +13,16 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
+        stage('checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/SUDHA1943/Terraform-Jenkins.git'
+                 script{
+                        dir("terraform")
+                        {
+                            git "https://github.com/SUDHA1943/Terraform-Jenkins.git"
+                        }
+                    }
+                }
             }
-        }
-        stage('Terraform init') {
-            steps {
-                sh 'terraform init'
-            }
-        }
-        stage('Plan') {
-            steps {
-                sh 'terraform plan -out tfplan'
-                sh 'terraform show -no-color tfplan > tfplan.txt'
-            }
-        }
           stage('Approval') {
            when {
                not {
