@@ -20,21 +20,14 @@ pipeline {
                 }
             }
         }
-        
-        stage('Cleanup') {
-            steps {
-                script {
-                    // Remove any existing Terraform state or plan files
-                    dir('terraform') {
-                        sh 'rm -f terraform.tfstate terraform.tfstate.backup'
-                        sh 'rm -f *.tfplan'
-                        sh 'rm -rf .terraform'
-                    }
-                }
-            }
-        }
 
         stage('Plan') {
+            when {
+                // Run the Plan stage only if we're not in destroy mode
+                expression {
+                    return !params.destroy
+                }
+            }
             steps {
                 script {
                     // Initialize Terraform and create a plan
@@ -45,12 +38,17 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Approval') {
             when {
-                // Ask for manual approval if autoApprove is not enabled
-                not {
-                    equals expected: true, actual: params.autoApprove
+                // Ask for manual approval if autoApprove is not enabled and not in destroy mode
+                allOf {
+                    not {
+                        equals expected: true, actual: params.autoApprove
+                    }
+                    expression {
+                        return !params.destroy
+                    }
                 }
             }
             steps {
@@ -62,7 +60,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Apply') {
             when {
                 // Only apply the plan if we're not in destroy mode
@@ -89,6 +87,25 @@ pipeline {
                 script {
                     // Destroy the Terraform-managed resources
                     sh "cd terraform/ && terraform destroy -input=false -auto-approve"
+                }
+            }
+        }
+
+        stage('Cleanup') {
+            when {
+                // Run Cleanup stage only if we're not in destroy mode
+                expression {
+                    return !params.destroy
+                }
+            }
+            steps {
+                script {
+                    // Remove any existing Terraform state or plan files
+                    dir('terraform') {
+                        sh 'rm -f terraform.tfstate terraform.tfstate.backup'
+                        sh 'rm -f *.tfplan'
+                        sh 'rm -rf .terraform'
+                    }
                 }
             }
         }
