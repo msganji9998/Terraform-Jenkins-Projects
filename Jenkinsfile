@@ -85,8 +85,10 @@ pipeline {
             }
             steps {
                 script {
-                    // Destroy the Terraform-managed resources
-                    sh "cd terraform/ && terraform destroy -input=false -auto-approve"
+                    // Initialize Terraform and then destroy the Terraform-managed resources
+                    def terraformDir = 'terraform/'
+                    sh "cd ${terraformDir} && terraform init"
+                    sh "cd ${terraformDir} && terraform destroy -input=false -auto-approve"
                 }
             }
         }
