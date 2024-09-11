@@ -71,7 +71,8 @@ pipeline {
             steps {
                 script {
                     // Apply the Terraform plan to create resources
-                    sh "cd terraform/ && terraform apply -input=false tfplan"
+                    def terraformDir = 'terraform/'
+                    sh "cd ${terraformDir} && terraform apply -input=false tfplan"
                 }
             }
         }
@@ -103,6 +104,21 @@ pipeline {
             steps {
                 script {
                     // Remove any existing Terraform state or plan files
+                    dir('terraform') {
+                        sh 'rm -f terraform.tfstate terraform.tfstate.backup'
+                        sh 'rm -f *.tfplan'
+                        sh 'rm -rf .terraform'
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Ensure cleanup is always executed regardless of success or failure
+            script {
+                if (!params.destroy) {
                     dir('terraform') {
                         sh 'rm -f terraform.tfstate terraform.tfstate.backup'
                         sh 'rm -f *.tfplan'
