@@ -34,23 +34,45 @@ pipeline {
             steps {
                 dir('terraform') {
                     sh 'terraform init'
-                    sh 'terraform plan -out=tfplan'
-                    sh 'terraform show -no-color tfplan > tfplan.txt'
+                    if (params.destroy) {
+                        sh 'terraform plan -destroy -out=tfplan-destroy'
+                        sh 'terraform show -no-color tfplan-destroy > tfplan-destroy.txt'
+                    } else {
+                        sh 'terraform plan -out=tfplan'
+                        sh 'terraform show -no-color tfplan > tfplan.txt'
+                    }
                 }
             }
         }
 
         stage('Approval') {
             when {
-                not {
-                    equals expected: true, actual: params.autoApprove
+                anyOf {
+                    expression { params.autoApprove == false && !params.destroy }
+                    expression { params.autoApprove == false && params.destroy }
                 }
             }
             steps {
                 script {
-                    def plan = readFile 'terraform/tfplan.txt'
-                    input message: "Do you want to apply the plan?",
+                    def planFile = params.destroy ? 'terraform/tfplan-destroy.txt' : 'terraform/tfplan.txt'
+                    def plan = readFile(planFile)
+                    input message: "Do you want to proceed with the plan?",
                         parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
+                }
+            }
+        }
+
+        stage('Apply') {
+            when {
+                expression { !params.destroy }
+            }
+            steps {
+                dir('terraform') {
+                    if (params.autoApprove) {
+                        sh 'terraform apply -input=false tfplan'
+                    } else {
+                        sh 'terraform apply -input=false tfplan'
+                    }
                 }
             }
         }
@@ -61,40 +83,15 @@ pipeline {
             }
             steps {
                 dir('terraform') {
-                    script {
-                        if (params.autoApprove) {
-                            sh 'terraform destroy -auto-approve'
-                        } else {
-                            sh 'terraform plan -destroy -out=tfplan-destroy'
-                            sh 'terraform show -no-color tfplan-destroy > tfplan-destroy.txt'
-                            def destroyPlan = readFile 'terraform/tfplan-destroy.txt'
-                            input message: "Do you want to destroy the infrastructure?",
-                                parameters: [text(name: 'Destroy Plan', description: 'Please review the destroy plan', defaultValue: destroyPlan)]
-                            sh 'terraform destroy -input=false -auto-approve'
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Apply') {
-            when {
-                not {
-                    expression { params.destroy }
-                }
-            }
-            steps {
-                dir('terraform') {
-                    script {
-                        if (params.autoApprove) {
-                            sh 'terraform apply -input=false tfplan'
-                        } else {
-                            sh 'terraform show -no-color tfplan > tfplan.txt'
-                            def applyPlan = readFile 'terraform/tfplan.txt'
-                            input message: "Do you want to apply the plan?",
-                                parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: applyPlan)]
-                            sh 'terraform apply -input=false tfplan'
-                        }
+                    if (params.autoApprove) {
+                        sh 'terraform destroy -auto-approve'
+                    } else {
+                        sh 'terraform destroy -out=tfplan-destroy'
+                        sh 'terraform show -no-color tfplan-destroy > tfplan-destroy.txt'
+                        def destroyPlan = readFile 'terraform/tfplan-destroy.txt'
+                        input message: "Do you want to destroy the infrastructure?",
+                            parameters: [text(name: 'Destroy Plan', description: 'Please review the destroy plan', defaultValue: destroyPlan)]
+                        sh 'terraform destroy -input=false -auto-approve'
                     }
                 }
             }
