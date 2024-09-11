@@ -1,2 +1,1 @@
-# Terraform-Jenkins
-Terraform-Jenkins
+# Provisioning cloud infrastructure using Terraform through Jenkins
